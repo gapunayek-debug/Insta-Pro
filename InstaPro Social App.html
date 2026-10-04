@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>InstaPro - Social App</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome Icons CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <!-- Google Fonts for Instagram-like Typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Grand+Hotel&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            logo: ['"Grand Hotel"', 'cursive']
+          },
+          colors: {
+            darkBg: '#090a0f',
+            darkCard: '#12141a',
+            darkBorder: '#232632',
+            instaPink: '#E1306C',
+            instaPurple: '#C13584',
+            instaYellow: '#FCAF45',
+            instaOrange: '#F77737'
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      display: none;
+    }
+    * {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* Gradient Story Ring */
+    .story-ring {
+      background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+    }
+
+    /* Pop Heart Animation on Double Click */
+    @keyframes heartPop {
+      0% {
+        transform: scale(0) rotate(-15deg);
+        opacity: 0;
+      }
+      50% {
+        transform: scale(1.3) rotate(0deg);
+        opacity: 1;
+      }
+      70% {
+        transform: scale(0.9) rotate(5deg);
+        opacity: 0.9;
+      }
+      100% {
+        transform: scale(1) rotate(0deg);
+        opacity: 0;
+      }
+    }
+    .heart-pop-active {
+      animation: heartPop 0.85s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    }
+
+    /* Smooth Slide Modal */
+    .modal-enter {
+      animation: fadeInModal 0.25s ease-out forwards;
+    }
+    @keyframes fadeInModal {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
+  </style>
+</head>
+
+<body class="bg-black text-gray-100 font-sans antialiased min-h-screen flex justify-center selection:bg-pink-500 selection:text-white">
+
+  <div class="w-full max-w-md bg-darkBg min-h-screen border-x border-darkBorder flex flex-col relative pb-20 shadow-2xl">
+
+    <!-- Top Header -->
+    <header class="sticky top-0 z-30 bg-darkBg/95 backdrop-blur-md border-b border-darkBorder px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center space-x-2">
+        <h1 class="text-3xl font-logo tracking-wider bg-gradient-to-r from-instaYellow via-instaPink to-instaPurple bg-clip-text text-transparent select-none cursor-pointer">
+          InstaPro
+        </h1>
+        <span class="text-[10px] font-bold uppercase tracking-wider bg-pink-600/30 text-pink-400 px-1.5 py-0.5 rounded-full border border-pink-500/40">PRO</span>
+      </div>
+      <div class="flex items-center space-x-5 text-xl">
+        <button id="header-notif-btn" class="relative text-gray-300 hover:text-white transition active:scale-90" title="Notifications">
+          <i class="fa-regular fa-heart"></i>
+          <span class="absolute -top-1 -right-1 w-2 h-2 bg-pink-500 rounded-full ring-2 ring-darkBg"></span>
+        </button>
+        <button id="header-dm-btn" class="relative text-gray-300 hover:text-white transition active:scale-90" title="Direct Messages">
+          <i class="fa-regular fa-paper-plane"></i>
+          <span class="absolute -top-1 -right-1 text-[9px] bg-red-500 font-bold px-1 rounded-full ring-2 ring-darkBg">3</span>
+        </button>
+      </div>
+    </header>
+
+    <main class="flex-1 w-full overflow-y-auto">
+
+      <!-- ================= 1. HOME TAB VIEW ================= -->
+      <section id="view-home" class="view-panel block">
+        <!-- Stories Row -->
+        <div class="py-3 px-2 border-b border-darkBorder/60 overflow-x-auto flex space-x-3.5 scrollbar-none items-center" id="stories-tray">
+          <!-- Dynamically populated stories -->
+        </div>
+
+        <!-- Feed Posts Section -->
+        <div id="posts-feed" class="flex flex-col divide-y divide-darkBorder/70">
+          <!-- Dynamically generated posts -->
+        </div>
+      </section>
+
+      <!-- ================= 2. EXPLORE / SEARCH TAB VIEW ================= -->
+      <section id="view-explore" class="view-panel hidden p-2">
+        <div class="relative mb-3">
+          <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-gray-400 text-sm"></i>
+          <input type="text" id="explore-search-input" placeholder="Search creators, hashtags, topics..." 
+                 class="w-full bg-darkCard border border-darkBorder rounded-xl pl-10 pr-4 py-2 text-sm text-white focus:outline-none focus:border-pink-500 transition">
+        </div>
+        <div class="grid grid-cols-3 gap-1.5 rounded-xl overflow-hidden" id="explore-grid">
+          <!-- Grid items injected by JS -->
+        </div>
+      </section>
+
+      <!-- ================= 3. PROFILE TAB VIEW ================= -->
+      <section id="view-profile" class="view-panel hidden pb-8">
+        <!-- Profile Header -->
+        <div class="p-4 border-b border-darkBorder">
+          <div class="flex items-center justify-between">
+            <div class="relative story-ring p-[2.5px] rounded-full">
+              <img id="my-profile-avatar" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80" 
+                   alt="Avatar" class="w-18 h-18 rounded-full border-2 border-darkBg object-cover w-20 h-20">
+              <span class="absolute bottom-1 right-1 bg-blue-500 text-white text-[10px] w-5 h-5 flex items-center justify-center rounded-full border-2 border-darkBg">
+                <i class="fa-solid fa-check"></i>
+              </span>
+            </div>
+            <!-- Stats -->
+            <div class="flex items-center space-x-6 text-center pr-3">
+              <div>
+                <p id="profile-post-count" class="font-bold text-lg text-white">4</p>
+                <p class="text-xs text-gray-400">Posts</p>
+              </div>
+              <div>
+                <p class="font-bold text-lg text-white">14.8K</p>
+                <p class="text-xs text-gray-400">Followers</p>
+              </div>
+              <div>
+                <p class="font-bold text-lg text-white">382</p>
+                <p class="text-xs text-gray-400">Following</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bio -->
+          <div class="mt-3">
+            <h2 class="font-bold text-base flex items-center gap-1.5 text-white">
+              Sikha Roy <i class="fa-solid fa-circle-check text-blue-500 text-xs"></i>
+            </h2>
+            <p class="text-xs text-pink-400 font-medium">Digital Creator & Tech Explorer 🚀</p>
+            <p class="text-xs text-gray-300 mt-1 leading-relaxed">
+              Transforming creative ideas into code & visuals ⚡<br>
+              Living life in 4K resolution 🎬 | Coffee enthusiast ☕
+            </p>
+            <a href="#" class="text-xs text-blue-400 hover:underline flex items-center gap-1 mt-1">
+              <i class="fa-solid fa-link text-[10px]"></i> instapro.app/sikharoy
+            </a>
+          </div>
+
+          <!-- Actions -->
+          <div class="flex gap-2 mt-4">
+            <button class="flex-1 bg-darkCard border border-darkBorder hover:bg-neutral-800 text-sm font-semibold py-1.5 rounded-lg transition">Edit Profile</button>
+            <button class="flex-1 bg-darkCard border border-darkBorder hover:bg-neutral-800 text-sm font-semibold py-1.5 rounded-lg transition">Share Profile</button>
+            <button class="px-3 bg-darkCard border border-darkBorder hover:bg-neutral-800 rounded-lg text-sm text-gray-300"><i class="fa-solid fa-user-plus"></i></button>
+          </div>
+        </div>
+
+        <!-- Profile Tabs -->
+        <div class="flex border-b border-darkBorder text-gray-400 text-sm">
+          <button class="flex-1 py-3 text-white border-b-2 border-white flex justify-center items-center gap-2">
+            <i class="fa-solid fa-table-cells"></i>
+          </button>
+          <button class="flex-1 py-3 hover:text-white flex justify-center items-center gap-2">
+            <i class="fa-solid fa-film"></i>
+          </button>
+          <button class="flex-1 py-3 hover:text-white flex justify-center items-center gap-2">
+            <i class="fa-regular fa-bookmark"></i>
+          </button>
+        </div>
+
+        <!-- Profile Grid -->
+        <div id="profile-grid" class="grid grid-cols-3 gap-1 p-1">
+          <!-- Injected via JS -->
+        </div>
+      </section>
+    </main>
+
+    <nav class="fixed bottom-0 w-full max-w-md bg-darkBg/95 backdrop-blur-md border-t border-darkBorder py-2.5 px-6 flex justify-between items-center z-40">
+      <button class="nav-btn text-white text-xl p-1 transition" data-target="view-home" title="Home">
+        <i class="fa-solid fa-house"></i>
+      </button>
+      <button class="nav-btn text-gray-400 hover:text-white text-xl p-1 transition" data-target="view-explore" title="Search">
+        <i class="fa-solid fa-magnifying-glass"></i>
+      </button>
+      <button id="open-create-modal" class="bg-gradient-to-tr from-instaOrange via-instaPink to-instaPurple text-white p-2 rounded-2xl w-10 h-10 flex items-center justify-center shadow-lg shadow-pink-500/30 transform active:scale-95 transition" title="Create Post">
+        <i class="fa-solid fa-plus text-lg"></i>
+      </button>
+      <button class="nav-btn text-gray-400 hover:text-white text-xl p-1 transition" onclick="showNotification('Reels feature rolling out soon!')" title="Reels">
+        <i class="fa-solid fa-film"></i>
+      </button>
+      <button class="nav-btn text-gray-400 hover:text-white p-0.5 rounded-full transition" data-target="view-profile" title="Profile">
+        <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80" 
+             alt="Profile" class="w-7 h-7 rounded-full object-cover ring-2 ring-transparent">
+      </button>
+    </nav>
+
+    <div id="story-modal" class="fixed inset-0 z-50 bg-black/95 hidden flex-col items-center justify-center p-4">
+      <div class="w-full max-w-sm h-[80vh] relative bg-neutral-900 rounded-2xl overflow-hidden shadow-2xl flex flex-col">
+        <!-- Story Progress Bar -->
+        <div class="absolute top-3 left-3 right-3 z-20 flex space-x-1">
+          <div class="h-1 bg-white/40 flex-1 rounded-full overflow-hidden">
+            <div id="story-progress-bar" class="h-full bg-white w-0 transition-all duration-100 ease-linear"></div>
+          </div>
+        </div>
+
+        <!-- Story User Header -->
+        <div class="absolute top-6 left-3 right-3 z-20 flex items-center justify-between text-white">
+          <div class="flex items-center space-x-2">
+            <img id="story-avatar" src="" class="w-8 h-8 rounded-full border border-white object-cover" alt="User">
+            <div>
+              <p id="story-username" class="text-xs font-bold leading-none"></p>
+              <p class="text-[10px] text-gray-300">3h ago</p>
+            </div>
+          </div>
+          <button id="close-story-btn" class="w-8 h-8 rounded-full bg-black/40 flex items-center justify-center text-white text-base">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+
+        <!-- Story Media Display -->
+        <img id="story-image" src="" alt="Story Content" class="w-full h-full object-cover">
+
+        <!-- Story Reply Input -->
+        <div class="absolute bottom-3 left-3 right-3 z-20 flex items-center space-x-2">
+          <input type="text" placeholder="Send a quick message..." 
+                 class="flex-1 bg-black/50 backdrop-blur-md border border-white/20 rounded-full px-4 py-2 text-xs text-white placeholder-gray-300 focus:outline-none">
+          <button onclick="showNotification('Reaction sent! 💖')" class="text-white text-xl p-2 active:scale-125 transition">
+            <i class="fa-regular fa-heart"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div id="create-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4">
+      <div class="bg-darkCard border border-darkBorder w-full max-w-sm rounded-2xl overflow-hidden modal-enter p-5 shadow-2xl">
+        <div class="flex items-center justify-between pb-3 border-b border-darkBorder">
+          <h3 class="font-bold text-base text-white">Create New Post</h3>
+          <button id="close-create-btn" class="text-gray-400 hover:text-white text-lg">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+
+        <form id="create-post-form" class="mt-4 space-y-4">
+          <!-- Image URL Input -->
+          <div>
+            <label class="block text-xs font-semibold text-gray-300 mb-1">Image URL</label>
+            <input type="url" id="post-img-url" required 
+                   placeholder="https://images.unsplash.com/..." 
+                   class="w-full bg-darkBg border border-darkBorder rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-pink-500 transition">
+            <div class="flex gap-2 mt-1.5 overflow-x-auto py-1">
+              <span class="text-[10px] text-gray-400 self-center">Presets:</span>
+              <button type="button" onclick="setPresetImage('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80')" class="text-[10px] bg-darkBg border border-darkBorder px-2 py-0.5 rounded text-gray-300 hover:text-white">Abstract</button>
+              <button type="button" onclick="setPresetImage('https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=800&q=80')" class="text-[10px] bg-darkBg border border-darkBorder px-2 py-0.5 rounded text-gray-300 hover:text-white">Portrait</button>
+              <button type="button" onclick="setPresetImage('https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80')" class="text-[10px] bg-darkBg border border-darkBorder px-2 py-0.5 rounded text-gray-300 hover:text-white">Sunset</button>
+            </div>
+          </div>
+
+          <!-- Caption Input -->
+          <div>
+            <label class="block text-xs font-semibold text-gray-300 mb-1">Caption & Hashtags</label>
+            <textarea id="post-caption" rows="3" required placeholder="Write what's on your mind... #vibes #pro" 
+                      class="w-full bg-darkBg border border-darkBorder rounded-xl p-3 text-xs text-white focus:outline-none focus:border-pink-500 transition resize-none"></textarea>
+          </div>
+
+          <!-- Submit Button -->
+          <button type="submit" class="w-full py-2.5 bg-gradient-to-r from-instaOrange via-instaPink to-instaPurple text-white text-xs font-bold rounded-xl shadow-lg hover:opacity-95 active:scale-95 transition">
+            Share to Feed
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <div id="toast" class="fixed top-5 left-1/2 transform -translate-x-1/2 bg-neutral-800 text-white text-xs px-4 py-2.5 rounded-full shadow-lg border border-neutral-700 pointer-events-none transition-all duration-300 opacity-0 -translate-y-2 z-50 flex items-center space-x-2">
+      <i class="fa-solid fa-sparkles text-pink-400"></i>
+      <span id="toast-msg">Notification</span>
+    </div>
+
+  </div>
+
+  <script>
+    // Initial Mock Stories
+    const initialStories = [
+      { id: 1, username: 'Your Story', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80', storyImg: 'https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=800&q=80', isSelf: true },
+      { id: 2, username: 'alex_visuals', avatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=200&q=80', storyImg: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=800&q=80' },
+      { id: 3, username: 'nina.codes', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=200&q=80', storyImg: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=800&q=80' },
+      { id: 4, username: 'wander_soul', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80', storyImg: 'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&w=800&q=80' },
+      { id: 5, username: 'cyber_art', avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=200&q=80', storyImg: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80' }
+    ];
+
+    // Initial Mock Posts
+    let feedPosts = [
+      {
+        id: 101,
+        author: 'sikharoy',
+        authorAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
+        location: 'Siliguri, India',
+        image: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=900&q=80',
+        caption: 'Creating next-gen interactive mobile experiences ✨ Keep designing, keep coding! #InstaPro #WebDev #Design',
+        likes: 1248,
+        liked: false,
+        bookmarked: false,
+        timeAgo: '12m ago',
+        comments: [
+          { author: 'nina.codes', text: 'This looks super clean! 🔥' },
+          { author: 'alex_visuals', text: 'Love the sleek UI gradient 👏' }
+        ]
+      },
+      {
+        id: 102,
+        author: 'alex_visuals',
+        authorAvatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=200&q=80',
+        location: 'Kyoto, Japan',
+        image: 'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?auto=format&fit=crop&w=900&q=80',
+        caption: 'Morning walk through historic shrines. The tranquil silence is mesmerizing. 🌸 #TravelGoals #Japan #Wanderlust',
+        likes: 3410,
+        liked: true,
+        bookmarked: true,
+        timeAgo: '2h ago',
+        comments: [
+          { author: 'wander_soul', text: 'Kyoto never fails to amaze!' }
+        ]
+      }
+    ];
+
+    function renderStories() {
+      const container = document.getElementById('stories-tray');
+      container.innerHTML = initialStories.map((story) => `
+        <div class="flex flex-col items-center space-y-1.5 cursor-pointer flex-shrink-0" onclick="openStory(${story.id})">
+          <div class="story-ring p-[2px] rounded-full transition transform hover:scale-105 active:scale-95">
+            <img src="${story.avatar}" alt="${story.username}" class="w-16 h-16 rounded-full object-cover border-2 border-darkBg">
+          </div>
+          <span class="text-[11px] text-gray-300 w-16 truncate text-center">${story.username}</span>
+        </div>
+      `).join('');
+    }
+
+    function renderFeed() {
+      const container = document.getElementById('posts-feed');
+      container.innerHTML = feedPosts.map(post => `
+        <article class="py-3 flex flex-col" id="post-${post.id}">
+          <!-- Post Header -->
+          <div class="flex items-center justify-between px-3 pb-2.5">
+            <div class="flex items-center space-x-2.5">
+              <div class="story-ring p-[1.5px] rounded-full">
+                <img src="${post.authorAvatar}" class="w-8 h-8 rounded-full object-cover border border-darkBg" alt="${post.author}">
+              </div>
+              <div>
+                <p class="font-bold text-xs text-white leading-none hover:underline cursor-pointer">${post.author}</p>
+                <p class="text-[10px] text-gray-400 mt-0.5">${post.location}</p>
+              </div>
+            </div>
+            <button class="text-gray-400 hover:text-white px-2 py-1 text-sm"><i class="fa-solid fa-ellipsis"></i></button>
+          </div>
+
+          <!-- Post Media with Double-Click Heart Container -->
+          <div class="relative w-full aspect-square bg-neutral-900 overflow-hidden cursor-pointer select-none" ondblclick="handleDoubleClickLike(${post.id})">
+            <img src="${post.image}" class="w-full h-full object-cover" loading="lazy" alt="Post">
+            <!-- Double click pop heart -->
+            <div id="pop-heart-${post.id}" class="absolute inset-0 flex items-center justify-center text-white text-7xl pointer-events-none opacity-0">
+              <i class="fa-solid fa-heart text-red-500 drop-shadow-2xl"></i>
+            </div>
+          </div>
+
+          <!-- Post Action Icons -->
+          <div class="px-3 pt-3 flex items-center justify-between text-xl">
+            <div class="flex items-center space-x-4">
+              <button onclick="toggleLike(${post.id})" class="transition active:scale-125 focus:outline-none">
+                <i class="${post.liked ? 'fa-solid fa-heart text-red-500' : 'fa-regular fa-heart text-white hover:text-gray-300'}"></i>
+              </button>
+              <button onclick="focusCommentInput(${post.id})" class="text-white hover:text-gray-300 transition active:scale-95">
+                <i class="fa-regular fa-comment"></i>
+              </button>
+              <button onclick="showNotification('Share link copied to clipboard!')" class="text-white hover:text-gray-300 transition active:scale-95">
+                <i class="fa-regular fa-paper-plane"></i>
+              </button>
+            </div>
+            <button onclick="toggleBookmark(${post.id})" class="text-white hover:text-gray-300 transition active:scale-110">
+              <i class="${post.bookmarked ? 'fa-solid fa-bookmark text-white' : 'fa-regular fa-bookmark'}"></i>
+            </button>
+          </div>
+
+          <!-- Likes Count -->
+          <div class="px-3 pt-2">
+            <p class="text-xs font-bold text-white"><span id="likes-count-${post.id}">${post.likes.toLocaleString()}</span> likes</p>
+          </div>
+
+          <!-- Caption -->
+          <div class="px-3 pt-1 text-xs text-gray-200">
+            <span class="font-bold text-white mr-1.5">${post.author}</span>
+            <span>${post.caption}</span>
+          </div>
+
+          <!-- Comments Section -->
+          <div class="px-3 pt-2">
+            ${post.comments.length > 0 ? `
+              <div class="space-y-1 mb-1.5" id="comments-list-${post.id}">
+                ${post.comments.map(c => `
+                  <div class="text-xs text-gray-300">
+                    <span class="font-bold text-white mr-1">${c.author}</span>
+                    <span>${c.text}</span>
+                  </div>
+                `).join('')}
+              </div>
+            ` : ''}
+            <span class="text-[10px] text-gray-400 uppercase tracking-wider block mt-1">${post.timeAgo}</span>
+          </div>
+
+          <!-- Add Comment Input Row -->
+          <form onsubmit="handleCommentSubmit(event, ${post.id})" class="px-3 pt-2 flex items-center border-t border-darkBorder/40 mt-2">
+            <input type="text" id="comment-input-${post.id}" placeholder="Add a comment..." 
+                   class="bg-transparent flex-1 text-xs text-white placeholder-gray-500 focus:outline-none py-1">
+            <button type="submit" class="text-xs font-bold text-pink-500 hover:text-pink-400 pl-2">Post</button>
+          </form>
+        </article>
+      `).join('');
+    }
+
+    function toggleLike(postId) {
+      const post = feedPosts.find(p => p.id === postId);
+      if (!post) return;
+
+      post.liked = !post.liked;
+      post.likes += post.liked ? 1 : -1;
+      renderFeed();
+    }
+
+    function handleDoubleClickLike(postId) {
+      const post = feedPosts.find(p => p.id === postId);
+      if (!post) return;
+
+      if (!post.liked) {
+        post.liked = true;
+        post.likes += 1;
+      }
+      
+      const popHeart = document.getElementById(`pop-heart-${postId}`);
+      if (popHeart) {
+        popHeart.classList.remove('heart-pop-active');
+        void popHeart.offsetWidth; // trigger reflow
+        popHeart.classList.add('heart-pop-active');
+      }
+
+      setTimeout(() => {
+        renderFeed();
+      }, 700);
+    }
+
+    function toggleBookmark(postId) {
+      const post = feedPosts.find(p => p.id === postId);
+      if (post) {
+        post.bookmarked = !post.bookmarked;
+        renderFeed();
+        showNotification(post.bookmarked ? 'Saved to collection!' : 'Removed from bookmarks');
+      }
+    }
+
+    function focusCommentInput(postId) {
+      const input = document.getElementById(`comment-input-${postId}`);
+      if (input) input.focus();
+    }
+
+    function handleCommentSubmit(e, postId) {
+      e.preventDefault();
+      const input = document.getElementById(`comment-input-${postId}`);
+      const val = input.value.trim();
+      if (!val) return;
+
+      const post = feedPosts.find(p => p.id === postId);
+      if (post) {
+        post.comments.push({ author: 'sikharoy', text: val });
+        input.value = '';
+        renderFeed();
+        showNotification('Comment added!');
+      }
+    }
+
+    let storyTimer = null;
+    function openStory(storyId) {
+      const story = initialStories.find(s => s.id === storyId);
+      if (!story) return;
+
+      const modal = document.getElementById('story-modal');
+      const avatar = document.getElementById('story-avatar');
+      const username = document.getElementById('story-username');
+      const image = document.getElementById('story-image');
+      const bar = document.getElementById('story-progress-bar');
+
+      avatar.src = story.avatar;
+      username.innerText = story.username;
+      image.src = story.storyImg;
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+
+      // Animate progress bar
+      bar.style.width = '0%';
+      clearTimeout(storyTimer);
+      setTimeout(() => { bar.style.width = '100%'; }, 50);
+
+      storyTimer = setTimeout(() => {
+        closeStory();
+      }, 4000);
+    }
+
+    function closeStory() {
+      const modal = document.getElementById('story-modal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+      clearTimeout(storyTimer);
+    }
+
+    document.getElementById('close-story-btn').addEventListener('click', closeStory);
+
+    const createModal = document.getElementById('create-modal');
+    document.getElementById('open-create-modal').addEventListener('click', () => {
+      createModal.classList.remove('hidden');
+      createModal.classList.add('flex');
+    });
+
+    document.getElementById('close-create-btn').addEventListener('click', () => {
+      createModal.classList.add('hidden');
+      createModal.classList.remove('flex');
+    });
+
+    function setPresetImage(url) {
+      document.getElementById('post-img-url').value = url;
+    }
+
+    document.getElementById('create-post-form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const url = document.getElementById('post-img-url').value.trim();
+      const caption = document.getElementById('post-caption').value.trim();
+
+      if (!url || !caption) return;
+
+      const newPost = {
+        id: Date.now(),
+        author: 'sikharoy',
+        authorAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
+        location: 'Siliguri, India',
+        image: url,
+        caption: caption,
+        likes: 0,
+        liked: false,
+        bookmarked: false,
+        timeAgo: 'Just now',
+        comments: []
+      };
+
+      feedPosts.unshift(newPost);
+      renderFeed();
+      renderProfileGrid();
+
+      // Reset & Close
+      document.getElementById('create-post-form').reset();
+      createModal.classList.add('hidden');
+      createModal.classList.remove('flex');
+
+      // Switch to Home View
+      switchTab('view-home');
+      showNotification('Your post is now live!');
+    });
+
+    const navButtons = document.querySelectorAll('.nav-btn');
+    const viewPanels = document.querySelectorAll('.view-panel');
+
+    function switchTab(targetId) {
+      viewPanels.forEach(panel => {
+        if (panel.id === targetId) {
+          panel.classList.remove('hidden');
+          panel.classList.add('block');
+        } else {
+          panel.classList.add('hidden');
+          panel.classList.remove('block');
+        }
+      });
+
+      navButtons.forEach(btn => {
+        if (btn.getAttribute('data-target') === targetId) {
+          btn.classList.add('text-white');
+          btn.classList.remove('text-gray-400');
+        } else {
+          btn.classList.remove('text-white');
+          btn.classList.add('text-gray-400');
+        }
+      });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    navButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const target = btn.getAttribute('data-target');
+        if (target) switchTab(target);
+      });
+    });
+
+    // Explore Grid Populate
+    function renderExploreGrid() {
+      const exploreGrid = document.getElementById('explore-grid');
+      const exploreImages = [
+        'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=400&q=80',
+        'https://images.unsplash.com/photo-1511765224389-37f0e77cf0eb?auto=format&fit=crop&w=400&q=80',
+        'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=400&q=80',
+        'https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=400&q=80',
+        'https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=400&q=80',
+        'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?auto=format&fit=crop&w=400&q=80',
+        'https://images.unsplash.com/photo-1516259762381-22954d7d3ad2?auto=format&fit=crop&w=400&q=80',
+        'https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=400&q=80',
+        'https://images.unsplash.com/photo-1526778548025-fa2f459cd5c1?auto=format&fit=crop&w=400&q=80'
+      ];
+      exploreGrid.innerHTML = exploreImages.map(img => `
+        <div class="relative aspect-square overflow-hidden group cursor-pointer">
+          <img src="${img}" class="w-full h-full object-cover group-hover:scale-110 transition duration-300" alt="Explore">
+          <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white space-x-3 text-xs font-bold transition">
+            <span><i class="fa-solid fa-heart mr-1"></i> 1.2K</span>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // Profile Grid Populate
+    function renderProfileGrid() {
+      const grid = document.getElementById('profile-grid');
+      const myPosts = feedPosts.filter(p => p.author === 'sikharoy');
+      document.getElementById('profile-post-count').innerText = myPosts.length;
+      
+      grid.innerHTML = myPosts.map(p => `
+        <div class="relative aspect-square overflow-hidden group cursor-pointer bg-neutral-900">
+          <img src="${p.image}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300" alt="My Post">
+          <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white space-x-2 text-xs font-bold transition">
+            <span><i class="fa-solid fa-heart"></i> ${p.likes}</span>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function showNotification(msg) {
+      const toast = document.getElementById('toast');
+      const toastMsg = document.getElementById('toast-msg');
+      toastMsg.innerText = msg;
+      toast.classList.remove('opacity-0', '-translate-y-2');
+      toast.classList.add('opacity-100', 'translate-y-0');
+
+      setTimeout(() => {
+        toast.classList.add('opacity-0', '-translate-y-2');
+        toast.classList.remove('opacity-100', 'translate-y-0');
+      }, 2400);
+    }
+
+    // Header buttons click handlers
+    document.getElementById('header-notif-btn').addEventListener('click', () => {
+      showNotification('All caught up! No new notifications.');
+    });
+    document.getElementById('header-dm-btn').addEventListener('click', () => {
+      showNotification('Direct messages inbox opening...');
+    });
+
+    window.addEventListener('DOMContentLoaded', () => {
+      renderStories();
+      renderFeed();
+      renderExploreGrid();
+      renderProfileGrid();
+    });
+  </script>
+</body>
+</html>
